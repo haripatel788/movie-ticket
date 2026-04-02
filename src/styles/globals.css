@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-void: #080708;
+  --bg-surface: #111013;
+  --bg-elevated: #1a181d;
+  --bg-overlay: #221f26;
+  --accent-primary: #f5a623;
+  --accent-warm: #e8891a;
+  --accent-soft: #ffc85c;
+  --text-primary: #f5f0e8;
+  --text-secondary: #a89f94;
+  --text-muted: #5c5650;
+  --text-inverse: #080708;
+  --seat-available: #2a2730;
+  --seat-selected: #f5a623;
+  --seat-taken: #1a181d;
+  --border-subtle: rgba(245, 240, 232, 0.06);
+  --border-default: rgba(245, 240, 232, 0.12);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+body {
+  background: var(--bg-void);
+  color: var(--text-primary);
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  min-height: 100vh;
+}
+
+main {
+  position: relative;
+}
+
+.film-grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  opacity: 0.4;
+  z-index: 50;
+}
+
+.cursor-spotlight::after {
+  content: '';
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at var(--spot-x, 50%) var(--spot-y, 50%), rgba(245, 166, 35, 0.35), transparent 45%);
+  mix-blend-mode: screen;
+  transition: background 0.2s ease;
+}

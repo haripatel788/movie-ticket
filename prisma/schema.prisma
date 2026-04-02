@@ -1,0 +1,236 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String?
+  avatarUrl       String?
+  membershipTier  String    @default("free")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  bookings        Booking[]
+  reviews         Review[]
+  watchlist       WatchlistItem[]
+  preferences     UserPreferences?
+  savedPayments   SavedPayment[]
+}
+
+model UserPreferences {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id])
+  favoriteGenres  String[]
+  favoriteFormats String[]
+  favoriteTheaterIds String[]
+}
+
+model Movie {
+  id              String    @id @default(cuid())
+  tmdbId          Int       @unique
+  title           String
+  tagline         String?
+  synopsis        String?
+  posterUrl       String?
+  backdropUrl     String?
+  trailerUrl      String?
+  releaseDate     DateTime
+  runtime         Int
+  mpaaRating      String
+  genres          String[]
+  director        String?
+  cast            Json?
+  imdbScore       Float?
+  rtScore         Int?
+  audienceScore   Int?
+  status          String    @default("now_playing")
+  language        String    @default("English")
+  createdAt       DateTime  @default(now())
+
+  showtimes       Showtime[]
+  reviews         Review[]
+  watchlistItems  WatchlistItem[]
+}
+
+model Theater {
+  id              String    @id @default(cuid())
+  name            String
+  address         String
+  city            String
+  state           String
+  zipCode         String
+  latitude        Float
+  longitude       Float
+  phone           String?
+  website         String?
+  amenities       String[]
+  openingHours    Json?
+  imageUrls       String[]
+  rating          Float?
+  createdAt       DateTime  @default(now())
+
+  halls           Hall[]
+  showtimes       Showtime[]
+}
+
+model Hall {
+  id              String    @id @default(cuid())
+  theaterId       String
+  theater         Theater   @relation(fields: [theaterId], references: [id])
+  name            String
+  format          String
+  totalSeats      Int
+  rows            Int
+  seatsPerRow     Int
+  seatMap         Json?
+}
+
+model Showtime {
+  id              String    @id @default(cuid())
+  movieId         String
+  movie           Movie     @relation(fields: [movieId], references: [id])
+  theaterId       String
+  theater         Theater   @relation(fields: [theaterId], references: [id])
+  hallId          String
+  startTime       DateTime
+  endTime         DateTime
+  format          String
+  language        String    @default("English")
+  subtitled       Boolean   @default(false)
+  basePrice       Float
+  isCancelled     Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+
+  bookings        Booking[]
+  seatReservations SeatReservation[]
+}
+
+model SeatReservation {
+  id              String    @id @default(cuid())
+  showtimeId      String
+  showtime        Showtime  @relation(fields: [showtimeId], references: [id])
+  seatCode        String
+  bookingId       String?
+  booking         Booking?  @relation(fields: [bookingId], references: [id])
+  status          String    @default("available")
+  heldUntil       DateTime?
+}
+
+model Booking {
+  id              String    @id @default(cuid())
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id])
+  guestEmail      String?
+  showtimeId      String
+  showtime        Showtime  @relation(fields: [showtimeId], references: [id])
+  status          String    @default("confirmed")
+  totalAmount     Float
+  bookingFee      Float
+  taxAmount       Float
+  promoCode       String?
+  discountAmount  Float     @default(0)
+  stripePaymentId String?
+  createdAt       DateTime  @default(now())
+  
+  tickets         Ticket[]
+  concessionItems BookingConcession[]
+  seatReservations SeatReservation[]
+}
+
+model Ticket {
+  id              String    @id @default(cuid())
+  bookingId       String
+  booking         Booking   @relation(fields: [bookingId], references: [id])
+  seatCode        String
+  ticketType      String
+  price           Float
+  formatUpcharge  Float     @default(0)
+}
+
+model ConcessionItem {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+  category        String
+  imageUrl        String?
+  basePrice       Float
+  sizes           Json?
+  flavors         Json?
+  allergens       String[]
+  dietary         String[]
+  isAvailable     Boolean   @default(true)
+  isPopular       Boolean   @default(false)
+  isNew           Boolean   @default(false)
+  
+  bookings        BookingConcession[]
+}
+
+model BookingConcession {
+  id              String    @id @default(cuid())
+  bookingId       String
+  booking         Booking   @relation(fields: [bookingId], references: [id])
+  itemId          String
+  item            ConcessionItem @relation(fields: [itemId], references: [id])
+  quantity        Int
+  selectedSize    String?
+  selectedFlavor  String?
+  unitPrice       Float
+}
+
+model Review {
+  id              String    @id @default(cuid())
+  movieId         String
+  movie           Movie     @relation(fields: [movieId], references: [id])
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  rating          Int
+  text            String?
+  helpfulCount    Int       @default(0)
+  notHelpfulCount Int       @default(0)
+  createdAt       DateTime  @default(now())
+  
+  @@unique([movieId, userId])
+}
+
+model WatchlistItem {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  movieId         String
+  movie           Movie     @relation(fields: [movieId], references: [id])
+  notifyOnRelease Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  
+  @@unique([userId, movieId])
+}
+
+model PromoCode {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  discountType    String
+  discountValue   Float
+  maxUses         Int?
+  usedCount       Int       @default(0)
+  validFrom       DateTime
+  validUntil      DateTime
+  isActive        Boolean   @default(true)
+}
+
+model SavedPayment {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  stripePaymentMethodId String
+  last4           String
+  brand           String
+  expiryMonth     Int
+  expiryYear      Int
+  isDefault       Boolean   @default(false)
+}
